@@ -120,7 +120,7 @@ The `AttestationRegistry.sol` contract stores:
 
 ## Security
 
-- Contract: access control, pausable, evidence hash dedup
+- Contract: access control, evidence hash dedup
 - API: rate limiting, API key auth, input validation
 - ML: adversarial robustness, confidence thresholds
 
@@ -138,8 +138,8 @@ The `AttestationRegistry.sol` contract stores:
 
 ## MVP Success Criteria
 
-- [ ] Working API endpoint that returns risk score
-- [ ] On-chain attestation for each screen
+- [x] Working API endpoint that returns risk score
+- [x] On-chain attestation for each screen
 - [ ] At least 1 beta user or letter of intent
 
 ## License
