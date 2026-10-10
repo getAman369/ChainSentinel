@@ -1,14 +1,12 @@
-// This script can be used to deploy the "Storage" contract using Web3 library.
-// Please make sure to compile "./contracts/1_Storage.sol" file before running this script.
-// And use Right click -> "Run" from context menu of the file to run the script. Shortcut: Ctrl+Shift+S
-
-import { deploy } from './web3-lib'
+// Legacy Remix scripts - kept for reference, not used by ChainSentinel
+// These reference Remix IDE globals (web3Provider, remix) that don't exist outside Remix
+import { deploy } from "./web3-lib";
 
 (async () => {
   try {
-    const result = await deploy('Storage', [])
-    console.log(`address: ${result.address}`)
+    const result = await deploy("Storage", []);
+    console.log(`address: ${result.address}`);
   } catch (e) {
-    console.log(e.message)
+    console.log((e as Error).message);
   }
-})()
+})();
