@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { ethers } from "ethers";
+import { spawn } from "child_process";
+import path from "path";
 import { createAttestation, getLatestAttestation, getAttestationCount } from "../../services/attestationService";
 import { screenAddress } from "../../services/screeningService";
 
@@ -18,20 +20,19 @@ screenRouter.post("/screen", async (req, res) => {
     }
     
     const addressData = await screenAddress(address, chainId || 8453);
-    const riskScore = predictRisk(addressData);
-    const riskLabel = getRiskLabel(riskScore);
+    const riskResult = await predictRiskWithML(addressData);
     
     const evidenceHash = ethers.keccak256(
       ethers.toUtf8Bytes(`${address}:${txHash || "no-tx"}:${Date.now()}`)
     );
     
-    const attestation = await createAttestation(address, riskScore, evidenceHash, chainId || 8453);
+    const attestation = await createAttestation(address, riskResult.riskScore, evidenceHash, chainId || 8453);
     
     return res.json({
       address,
-      riskScore,
-      riskLabel,
-      confidence: "0.8500",
+      riskScore: riskResult.riskScore,
+      riskLabel: riskResult.riskLabel,
+      confidence: riskResult.confidence,
       evidenceHash,
       attestationTx: attestation.txHash,
       attestationId: attestation.id,
@@ -43,7 +44,7 @@ screenRouter.post("/screen", async (req, res) => {
   }
 });
 
-function predictRisk(data: {
+function predictRiskWithML(data: {
   tx_count: number;
   counterparties: number;
   avg_value: number;
@@ -51,31 +52,34 @@ function predictRisk(data: {
   contracts: number;
   days_active: number;
   mixing_score: number;
-}): number {
-  let score = 1;
-  if (data.tx_count > 100) score = Math.max(score, 4);
-  else if (data.tx_count > 50) score = Math.max(score, 3);
-  else if (data.tx_count > 20) score = Math.max(score, 2);
-  
-  if (data.mixing_score > 0.7) score = 5;
-  else if (data.mixing_score > 0.5) score = Math.max(score, 4);
-  else if (data.mixing_score > 0.3) score = Math.max(score, 3);
-  
-  if (data.contracts > 50) score = Math.max(score, 4);
-  else if (data.contracts > 20) score = Math.max(score, 3);
-  
-  if (data.counterparties > 500) score = Math.max(score, 4);
-  else if (data.counterparties > 100) score = Math.max(score, 3);
-  
-  if (data.max_value > 100) score = Math.max(score, 4);
-  else if (data.max_value > 10) score = Math.max(score, 3);
-  
-  return score;
-}
-
-function getRiskLabel(score: number): string {
-  const labels: Record<number, string> = {
-    1: "Minimal", 2: "Low", 3: "Medium", 4: "High", 5: "Critical"
-  };
-  return labels[score] || "Unknown";
+}): Promise<{ riskScore: number; riskLabel: string; confidence: number }> {
+  return new Promise((resolve, reject) => {
+    const python = spawn("python3", [
+      path.join(__dirname, "../../../ml/infer.py"),
+      JSON.stringify(data),
+    ]);
+    
+    let output = "";
+    let error = "";
+    
+    python.stdout.on("data", (chunk) => { output += chunk; });
+    python.stderr.on("data", (chunk) => { error += chunk; });
+    
+    python.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`ML inference failed: ${error}`));
+        return;
+      }
+      try {
+        const result = JSON.parse(output.trim());
+        if (result.error) {
+          reject(new Error(result.error));
+          return;
+        }
+        resolve(result);
+      } catch {
+        reject(new Error("Failed to parse ML output"));
+      }
+    });
+  });
 }
