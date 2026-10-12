@@ -56,7 +56,8 @@
 </head>
 <body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 pointer-events-none"></div>
-  <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+  <a href="#main-content" class="absolute top-0 left-0 bg-blue-600 text-white px-4 py-2 z-[60] focus:relative focus:static">Skip to main content</a>
+  <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50" role="banner">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center">
@@ -66,9 +67,9 @@
           </a>
         </div>
         <div class="hidden md:flex items-center space-x-8">
-          <a href="#screen" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Screen</a>
-          <a href="#history" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">History</a>
-          <a href="#docs" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Docs</a>
+          <a href="#screen" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">Screen</a>
+          <a href="#history" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">History</a>
+          <a href="#docs" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" role="menuitem">Docs</a>
         </div>
         <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Toggle dark mode">
           <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -82,7 +83,7 @@
     </nav>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
     <section id="screen" aria-labelledby="screen-heading" class="mb-12">
       <h1 id="screen-heading" class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">Screen Address</h1>
       <p class="text-gray-600 dark:text-gray-400 mb-8 max-w-2xl">Enter an Ethereum address to check AML/fraud risk. Results include ML risk score and on-chain attestation reference.</p>
@@ -139,6 +140,7 @@
           type="submit"
           id="screen-submit"
           class="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          aria-describedby="submit-help"
         >
           <span id="submit-text">Screen Address</span>
           <svg id="submit-spinner" class="w-5 h-5 animate-spin hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

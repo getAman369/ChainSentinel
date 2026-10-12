@@ -313,6 +313,8 @@ function showAddressSuggestions(input, suggestions) {
   if (!dropdown) {
     dropdown = document.createElement('div');
     dropdown.id = 'address-suggestions';
+    dropdown.setAttribute('role', 'listbox');
+    dropdown.setAttribute('aria-label', 'Address history suggestions');
     dropdown.className = 'absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden';
     input.parentNode.appendChild(dropdown);
   }
@@ -323,14 +325,17 @@ function showAddressSuggestions(input, suggestions) {
   }
 
   dropdown.innerHTML = suggestions.map(addr =>
-    `<button type="button" onclick="selectAddress('${addr}')" class="w-full px-3 py-2 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors font-mono">${addr}</button>`
+    `<button type="button" onclick="selectAddress('${addr}')" class="w-full px-3 py-2 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors font-mono" role="option">${addr}</button>`
   ).join('');
   dropdown.classList.remove('hidden');
 }
 
 function hideAddressSuggestions() {
   const dropdown = document.getElementById('address-suggestions');
-  if (dropdown) dropdown.classList.add('hidden');
+  if (dropdown) {
+    dropdown.classList.add('hidden');
+    dropdown.setAttribute('aria-hidden', 'true');
+  }
 }
 
 function selectAddress(address) {
@@ -342,6 +347,8 @@ function selectAddress(address) {
 function initForm() {
   const form = document.getElementById('screen-form');
   const addressInput = document.getElementById('address');
+
+  let currentSuggestionIndex = -1;
 
   const history = loadAddressHistory();
   if (history.length > 0 && addressInput.value === '') {
@@ -371,9 +378,37 @@ function initForm() {
     }
   });
 
+  addressInput.addEventListener('keydown', (e) => {
+    const dropdown = document.getElementById('address-suggestions');
+    if (!dropdown || dropdown.classList.contains('hidden')) return;
+
+    const buttons = dropdown.querySelectorAll('button');
+    if (!buttons.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      currentSuggestionIndex = (currentSuggestionIndex + 1) % buttons.length;
+      buttons.forEach((b, i) => {
+        b.classList.toggle('bg-gray-100 dark:bg-gray-600', i === currentSuggestionIndex);
+      });
+      buttons[currentSuggestionIndex].focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      currentSuggestionIndex = currentSuggestionIndex <= 0 ? buttons.length - 1 : currentSuggestionIndex - 1;
+      buttons.forEach((b, i) => {
+        b.classList.toggle('bg-gray-100 dark:bg-gray-600', i === currentSuggestionIndex);
+      });
+      buttons[currentSuggestionIndex].focus();
+    } else if (e.key === 'Escape') {
+      hideAddressSuggestions();
+      currentSuggestionIndex = -1;
+    }
+  });
+
   document.addEventListener('click', (e) => {
     if (!addressInput.contains(e.target)) {
       hideAddressSuggestions();
+      currentSuggestionIndex = -1;
     }
   });
 
