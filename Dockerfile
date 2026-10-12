@@ -17,7 +17,9 @@ FROM python:3.11-alpine AS ml-base
 WORKDIR /app/ml
 
 COPY ml/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apk add --no-cache --virtual .build-deps gcc g++ musl-dev python3-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apk del .build-deps
 
 FROM node:20-alpine AS runtime
 
@@ -27,10 +29,9 @@ ENV NODE_ENV=production
 ENV PYTHONPATH=/app/ml
 ENV CONFIDENCE_THRESHOLD=0.5
 
-RUN apk add --no-cache python3
-
 COPY --from=builder /app/dist/ ./dist/
-COPY --from=ml-base /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=ml-base /usr/local/ /usr/local/
+RUN ln -sf /usr/local/bin/python3.11 /usr/local/bin/python3
 
 COPY package*.json ./
 RUN npm ci --only=production
