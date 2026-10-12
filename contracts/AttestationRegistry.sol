@@ -204,4 +204,54 @@ contract AttestationRegistry {
     function getAttestationCount(address subject) external view returns (uint256) {
         return attestationsBySubject[subject].length;
     }
+
+    /**
+     * @notice Get paginated attestations for a subject.
+     * @param subject Address to look up.
+     * @param offset Starting index (0 for latest).
+     * @param limit Maximum number of attestations to return.
+     * @return ids Array of attestation IDs.
+     * @return riskScores Array of risk scores.
+     * @return evidenceHashes Array of evidence hashes.
+     * @return timestamps Array of timestamps.
+     * @return valids Array of valid flags.
+     */
+    function getAttestationsBySubject(
+        address subject,
+        uint256 offset,
+        uint256 limit
+    ) external view returns (
+        uint256[] memory ids,
+        uint8[] memory riskScores,
+        bytes32[] memory evidenceHashes,
+        uint256[] memory timestamps,
+        bool[] memory valids
+    ) {
+        uint256[] storage subjectIds = attestationsBySubject[subject];
+        uint256 total = subjectIds.length;
+        require(offset < total, "Offset out of bounds");
+        
+        uint256 end = offset + limit;
+        if (end > total) end = total;
+        uint256 count = end - offset;
+
+        ids = new uint256[](count);
+        riskScores = new uint8[](count);
+        evidenceHashes = new bytes32[](count);
+        timestamps = new uint256[](count);
+        valids = new bool[](count);
+
+        // Return newest first (reverse order)
+        for (uint256 i = 0; i < count; i++) {
+            uint256 index = total - 1 - offset - i;
+            uint256 attestationId = subjectIds[index];
+            Attestation storage att = attestations[attestationId];
+            
+            ids[i] = att.id;
+            riskScores[i] = att.riskScore;
+            evidenceHashes[i] = att.evidenceHash;
+            timestamps[i] = att.timestamp;
+            valids[i] = att.valid;
+        }
+    }
 }
