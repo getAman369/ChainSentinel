@@ -32,7 +32,12 @@ contract AttestationRegistry {
     mapping(address => uint256[]) public attestationsBySubject;
     mapping(bytes32 => bool) public evidenceHashUsed; // prevent duplicate evidence
 
+    // Pausable
+    bool public paused;
+
     // Events
+    event Paused(address account);
+    event Unpaused(address account);
     event AttestationCreated(
         uint256 indexed id,
         address indexed subject,
@@ -47,8 +52,23 @@ contract AttestationRegistry {
         _;
     }
 
+    modifier whenNotPaused() {
+        require(!paused, "Pausable: paused");
+        _;
+    }
+
     constructor() {
         owner = msg.sender;
+    }
+
+    function pause() external onlyOwner {
+        paused = true;
+        emit Paused(msg.sender);
+    }
+
+    function unpause() external onlyOwner {
+        paused = false;
+        emit Unpaused(msg.sender);
     }
 
     /**
@@ -61,7 +81,7 @@ contract AttestationRegistry {
         address subject,
         uint8 riskScore,
         bytes32 evidenceHash
-    ) external {
+    ) external whenNotPaused {
         require(riskScore >= 1 && riskScore <= 5, "Invalid risk score");
         require(!evidenceHashUsed[evidenceHash], "Evidence hash already used");
 
