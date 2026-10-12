@@ -1,0 +1,103 @@
+# ChainSentinel Monitoring and Alerting Configuration
+
+## Overview
+
+This configuration defines monitoring rules, alerting thresholds, and dashboards for the ChainSentinel AML screening API.
+
+## Prometheus Metrics
+
+### API Metrics
+- `chainsentinel_api_requests_total` - Total HTTP requests by method, path, and status code
+- `chainsentinel_api_response_time_seconds` - Request latency histogram
+- `chainsentinel_api_errors_total` - Total errors by type (validation, rate_limit, internal)
+- `chainsentinel_screening_count_total` - Total addresses screened
+- `chainsentinel_attestation_count_total` - Total attestations created on-chain
+
+### ML Metrics
+- `chainsentinel_ml_inference_count_total` - Total ML inference calls
+- `chainsentinel_ml_inference_time_seconds` - ML inference latency
+- `chainsentinel_ml_confidence_min` - Minimum confidence score
+- `chainsentinel_ml_confidence_max` - Maximum confidence score
+- `chainsentinel_ml_risk_score_distribution` - Risk score histogram (1-5)
+
+### Blockchain Metrics
+- `chainsentinel_contract_transactions_total` - Total transactions to AttestationRegistry
+- `chainsentinel_contract_gas_used` - Gas usage per transaction
+- `chainsentinel_contract_events_total` - Total events by type
+
+## Alert Rules
+
+### Critical Alerts
+
+| Alert | Condition | Duration | Description |
+|-------|-----------|----------|-------------|
+| APIUnreachable | `up{job="chainsentinel-api"} == 0` | 2m | API container is not responding |
+| HighErrorRate | `rate(chainsentinel_api_errors_total[5m]) > 0.1` | 3m | More than 10% of requests are erroring |
+| HighLatency | `histogram_quantile(0.95, chainsentinel_api_response_time_seconds) > 5` | 5m | 95th percentile response time exceeds 5 seconds |
+| MLInferenceFailure | `increase(chainsentinel_ml_inference_count_total[10m]) == 0 and increase(chainsentinel_screening_count_total[10m]) > 0` | 5m | ML inference not running but screening continues |
+| ContractInteractionFailed | `increase(chainsentinel_contract_transactions_total[5m]) > 0 and contract_up == 0` | 2m | On-chain attestation failing |
+
+### Warning Alerts
+
+| Alert | Condition | Duration | Description |
+|-------|-----------|----------|-------------|
+| HighRiskRate | `rate(chainsentinel_screening_risk_high[5m]) / rate(chainsentinel_screening_count_total[5m]) > 0.3` | 5m | More than 30% of addresses are high/critical risk |
+| ModelConfidenceLow | `chainsentinel_ml_confidence_min < 0.5` | 10m | ML confidence dropped below 50% |
+| RateLimitNear | `rate(rate_limited_requests[1m]) > 50` | 1m | Approaching rate limit capacity |
+| BlockSyncFailure | `block_number - chainsentinel_block_latest < -10` | 5m | Blockchain sync lag detected |
+
+## Grafana Dashboard Panels
+
+### ChainSentinel Overview
+- API Request Rate (requests/sec)
+- Error Rate (%)
+- Response Time (p50, p95, p99)
+- Screening Volume (addresses/min)
+- Risk Distribution (1-5 pie chart)
+- Blockchain Status (connected/disconnected)
+
+### ML Performance
+- Inference Latency
+- Confidence Score Distribution
+- Feature Importance (top 5 features)
+- Model Version (currently active)
+- Training Data Age
+
+## Alerting Channels
+
+### Slack
+- Channel: `#chainsentinel-alerts`
+- Critical alerts: immediate notification
+- Warning alerts: batched every 15 minutes
+
+### Email
+- Recipients: ops@chainsentinel.io, security@chainsentinel.io
+- Critical alerts: immediate with escalation
+- Warnings: hourly digest
+
+### PagerDuty
+- Critical alerts only (P1)
+- Escalation policy: primary → secondary → on-call team
+
+## Health Check Endpoints
+
+| Endpoint | Check | Interval |
+|----------|-------|----------|
+| `GET /health` | API + dependencies | 30s |
+| `GET /health` | Blockchain provider | Part of health check |
+| ML inference test | Python subprocess | 5m |
+| Contract callable | Read attestation count | 30s |
+| Redis (if used) | PING command | 10s |
+
+## Log Monitoring
+
+### Error Patterns to Watch
+- `"ML inference failed"` - Model loading or inference errors
+- `"PRIVATE_KEY not set"` - Missing environment variable
+- `"Evidence hash already used"` - Duplicate evidence submission
+- `"Too many requests"` - Rate limit exceeded
+
+### Log Sampling
+- Sample 10% of INFO logs in production
+- Keep 100% of WARN and ERROR logs
+- Retention: 90 days
