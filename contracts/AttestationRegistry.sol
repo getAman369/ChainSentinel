@@ -109,6 +109,54 @@ contract AttestationRegistry {
     }
 
     /**
+     * @notice Create multiple attestations in a single transaction (batch).
+     * @param subjects Array of addresses being screened.
+     * @param riskScores Array of risk levels 1-5.
+     * @param evidenceHashes Array of hashes of off-chain ML evidence payloads.
+     * @return ids Array of created attestation IDs.
+     */
+    function batchCreateAttestations(
+        address[] calldata subjects,
+        uint8[] calldata riskScores,
+        bytes32[] calldata evidenceHashes
+    ) external whenNotPaused returns (uint256[] memory ids) {
+        require(subjects.length == riskScores.length, "Array length mismatch");
+        require(subjects.length == evidenceHashes.length, "Array length mismatch");
+        require(subjects.length > 0, "Empty batch");
+        require(subjects.length <= 100, "Batch too large (max 100)");
+
+        ids = new uint256[](subjects.length);
+
+        for (uint256 i = 0; i < subjects.length; i++) {
+            require(riskScores[i] >= 1 && riskScores[i] <= 5, "Invalid risk score");
+            require(!evidenceHashUsed[evidenceHashes[i]], "Evidence hash already used");
+
+            evidenceHashUsed[evidenceHashes[i]] = true;
+            attestationCount++;
+
+            Attestation storage att = attestations[attestationCount];
+            att.id = attestationCount;
+            att.subject = subjects[i];
+            att.riskScore = riskScores[i];
+            att.evidenceHash = evidenceHashes[i];
+            att.timestamp = block.timestamp;
+            att.attestor = msg.sender;
+            att.valid = true;
+
+            attestationsBySubject[subjects[i]].push(attestationCount);
+            ids[i] = attestationCount;
+
+            emit AttestationCreated(
+                attestationCount,
+                subjects[i],
+                riskScores[i],
+                evidenceHashes[i],
+                block.timestamp
+            );
+        }
+    }
+
+    /**
      * @notice Revoke an attestation (owner only).
      * @param id Attestation ID to revoke.
      */
