@@ -45,6 +45,13 @@ contract AttestationRegistry {
         bytes32 evidenceHash,
         uint256 timestamp
     );
+    event BatchAttestationCreated(
+        bytes32 indexed batchId,
+        address indexed attestor,
+        uint256 count,
+        uint256 startId,
+        uint256 endId
+    );
     event AttestationRevoked(uint256 indexed id, address indexed revoker);
 
     modifier onlyOwner() {
@@ -127,6 +134,8 @@ contract AttestationRegistry {
 
         ids = new uint256[](subjects.length);
 
+        uint256 startId = attestationCount + 1;
+
         for (uint256 i = 0; i < subjects.length; i++) {
             require(riskScores[i] >= 1 && riskScores[i] <= 5, "Invalid risk score");
             require(!evidenceHashUsed[evidenceHashes[i]], "Evidence hash already used");
@@ -154,6 +163,17 @@ contract AttestationRegistry {
                 block.timestamp
             );
         }
+
+        uint256 endId = attestationCount;
+        bytes32 batchId = keccak256(abi.encodePacked(block.timestamp, msg.sender, startId));
+        
+        emit BatchAttestationCreated(
+            batchId,
+            msg.sender,
+            subjects.length,
+            startId,
+            endId
+        );
     }
 
     /**
