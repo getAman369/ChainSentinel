@@ -26,8 +26,10 @@ app.use(express.json({ limit: "1mb" }));
 app.use(requestIdMiddleware);
 app.use(loggingMiddleware);
 
+const API_VERSION = "v1";
+
 // Apply rate limiting to API routes
-app.use("/api/v1", async (req, res, next) => {
+app.use(`/api/${API_VERSION}`, async (req, res, next) => {
   try {
     await rateLimiter.consume(req.ip || "unknown");
     next();
@@ -36,8 +38,21 @@ app.use("/api/v1", async (req, res, next) => {
   }
 });
 
-app.use("/api/v1", screenRouter);
-app.use("/api/v1", attestRouter);
+app.use(`/api/${API_VERSION}`, screenRouter);
+app.use(`/api/${API_VERSION}`, attestRouter);
+
+app.get(`/api/${API_VERSION}`, (req, res) => {
+  res.json({
+    service: "ChainSentinel",
+    version: API_VERSION,
+    endpoints: {
+      screen: `POST /api/${API_VERSION}/screen`,
+      attestations: `GET /api/${API_VERSION}/attestations/:address`,
+      health: "GET /health",
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "ChainSentinel", timestamp: new Date().toISOString() });
@@ -49,4 +64,5 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`ChainSentinel API running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`API endpoint: http://localhost:${PORT}/api/${API_VERSION}`);
 });
