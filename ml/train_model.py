@@ -6,8 +6,11 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from feature_engineering import compute_features
+from evaluate import compute_metrics, save_metrics, print_metrics
 
 np.random.seed(42)
+
+MODEL_VERSION = "1.1.0"
 
 def generate_training_data(n_samples=2000):
     X = []
@@ -92,10 +95,15 @@ def main():
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     print(classification_report(y_test, y_pred, zero_division=0))
+
+    metrics = compute_metrics(y_test, y_pred)
+    save_metrics(metrics, MODEL_VERSION)
+    print_metrics(metrics)
+
     os.makedirs("ml/models", exist_ok=True)
     with open("ml/models/risk_model.pkl", "wb") as f:
         pickle.dump(model, f)
-    print("Model saved to ml/models/risk_model.pkl")
+    print(f"Model v{MODEL_VERSION} saved to ml/models/risk_model.pkl")
 
 if __name__ == "__main__":
     main()
