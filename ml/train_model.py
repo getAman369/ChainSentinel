@@ -5,6 +5,10 @@ import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from feature_engineering import compute_features
+from evaluate import compute_metrics, save_metrics, print_metrics
+from model_versioning import register_version, MODEL_VERSION
+from feature_engineering import ALL_FEATURES
 
 np.random.seed(42)
 
@@ -53,7 +57,32 @@ def generate_training_data(n_samples=2000):
             contracts = np.random.randint(50, 500)
             days = np.random.randint(365, 3650)
             mixing = np.random.uniform(0.7, 1.0)
-        X.append([tx_count, counterparties, avg_value, max_value, contracts, days, mixing])
+
+        raw = {
+            "tx_count": tx_count,
+            "counterparties": counterparties,
+            "avg_value": avg_value,
+            "max_value": max_value,
+            "contracts": contracts,
+            "days_active": days,
+            "mixing_score": mixing,
+        }
+        engineered = compute_features(raw)
+        X.append([
+            engineered["tx_count"],
+            engineered["counterparties"],
+            engineered["avg_value"],
+            engineered["max_value"],
+            engineered["contracts"],
+            engineered["days_active"],
+            engineered["mixing_score"],
+            engineered["tx_frequency"],
+            engineered["counterparty_diversity"],
+            engineered["value_concentration"],
+            engineered["contract_ratio"],
+            engineered["risk_velocity"],
+            engineered["activity_growth_rate"],
+        ])
         y.append(risk)
     return np.array(X), np.array(y)
 
@@ -66,10 +95,29 @@ def main():
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     print(classification_report(y_test, y_pred, zero_division=0))
+
+    metrics = compute_metrics(y_test, y_pred, risk_labels={1: "Minimal", 2: "Low", 3: "Medium", 4: "High", 5: "Critical"})
+    save_metrics(metrics, MODEL_VERSION)
+    print_metrics(metrics)
+
     os.makedirs("ml/models", exist_ok=True)
     with open("ml/models/risk_model.pkl", "wb") as f:
         pickle.dump(model, f)
-    print("Model saved to ml/models/risk_model.pkl")
+    print(f"Model v{MODEL_VERSION} saved to ml/models/risk_model.pkl")
+
+    register_version(
+        version=MODEL_VERSION,
+        model_file="risk_model.pkl",
+        training_params={
+            "n_estimators": 100,
+            "max_depth": 10,
+            "random_state": 42,
+            "class_weight": "balanced",
+        },
+        feature_set=ALL_FEATURES,
+        metrics=metrics,
+        notes="RandomForest classifier with engineered features",
+    )
 
 if __name__ == "__main__":
     main()
