@@ -19,12 +19,52 @@ const rateLimiter = new RateLimiterMemory({
   duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000") / 1000,
 });
 
+const MAX_REQUEST_SIZE = process.env.MAX_REQUEST_SIZE || "1mb";
+const MAX_RESPONSE_SIZE = process.env.MAX_RESPONSE_SIZE || "1mb";
+
 app.use(helmet());
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: MAX_REQUEST_SIZE }));
+app.use(express.urlencoded({ limit: MAX_REQUEST_SIZE, extended: true }));
+
+app.use((req, _res, next) => {
+  if (req.headers["content-length"]) {
+    const size = parseInt(req.headers["content-length"], 10);
+    if (size > parseInt(MAX_RESPONSE_SIZE)) {
+      return next(new Error("Request payload too large"));
+    }
+  }
+  next();
+});
 
 app.use(requestIdMiddleware);
 app.use(loggingMiddleware);
+
+const responseSizeLimiter = (req: any, res: any, next: any) => {
+  const originalWrite = res.write;
+  const originalEnd = res.end;
+  let bytesWritten = 0;
+  const maxSize = parseInt(MAX_RESPONSE_SIZE);
+
+  res.write = function (chunk: any) {
+    bytesWritten += chunk ? Buffer.byteLength(chunk) : 0;
+    if (bytesWritten > maxSize) {
+      res.status(413);
+    }
+    return originalWrite.apply(res, arguments as any);
+  };
+
+  res.end = function (chunk: any) {
+    bytesWritten += chunk ? Buffer.byteLength(chunk) : 0;
+    if (bytesWritten > maxSize) {
+      return originalEnd.call(res, JSON.stringify({ error: "Response too large" }), "utf-8");
+    }
+    return originalEnd.apply(res, arguments as any);
+  };
+
+  next();
+};
+app.use(responseSizeLimiter);
 
 const API_VERSION = "v1";
 
