@@ -22,7 +22,26 @@ const rateLimiter = new RateLimiterMemory({
 const MAX_REQUEST_SIZE = process.env.MAX_REQUEST_SIZE || "1mb";
 const MAX_RESPONSE_SIZE = process.env.MAX_RESPONSE_SIZE || "1mb";
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    frameguard: { action: "deny" },
+    xssFilter: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  })
+);
 app.use(cors());
 app.use(express.json({ limit: MAX_REQUEST_SIZE }));
 app.use(express.urlencoded({ limit: MAX_REQUEST_SIZE, extended: true }));
