@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+import {AddressValidation} from "./libraries/AddressValidation.sol";
+
 /**
  * @title AttestationRegistry
  * @notice ChainSentinel — stores immutable AML/fraud risk attestations on Base L2.
@@ -8,7 +10,7 @@ pragma solidity ^0.8.17;
  */
 contract AttestationRegistry {
     // Version info for upgrade tracking
-    string public constant VERSION = "1.2.0";
+    string public constant VERSION = "1.3.0";
 
     // Access control roles
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0;
@@ -149,6 +151,7 @@ contract AttestationRegistry {
         uint8 riskScore,
         bytes32 evidenceHash
     ) external whenNotPaused {
+        AddressValidation.requireValidAddress(subject, "Invalid subject address");
         require(riskScore >= 1 && riskScore <= 5, "Invalid risk score");
         require(!evidenceHashUsed[evidenceHash], "Evidence hash already used");
 
