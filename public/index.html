@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="ChainSentinel - AML/Fraud Detection API with on-chain attestation on Base L2. Screen Ethereum addresses for risk and record immutable attestations on-chain.">
+  <meta name="keywords" content="AML, fraud detection, blockchain, Base L2, Ethereum, risk scoring, compliance, DeFi, cryptocurrency">
+  <meta name="author" content="ChainSentinel">
+  <meta name="robots" content="index, follow">
+  
+  <meta property="og:title" content="ChainSentinel - AML Transaction Screening">
+  <meta property="og:description" content="AML/Fraud Detection API with on-chain attestation on Base L2">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://chainsentinel.io">
+  <meta property="og:image" content="https://chainsentinel.io/og-image.png">
+  <meta property="og:site_name" content="ChainSentinel">
+  
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ChainSentinel - AML Transaction Screening">
+  <meta name="twitter:description" content="AML/Fraud Detection API with on-chain attestation on Base L2">
+  <meta name="twitter:image" content="https://chainsentinel.io/og-image.png">
+  
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="favicon.ico" type="image/png">
+  <link rel="apple-touch-icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  
+  <title>ChainSentinel - AML Transaction Screening</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+  <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center">
+          <a href="/" class="flex items-center space-x-2" aria-label="ChainSentinel Home">
+            <span class="text-2xl">🛡️</span>
+            <span class="text-xl font-bold text-gray-900 dark:text-white">ChainSentinel</span>
+          </a>
+        </div>
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#screen" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Screen</a>
+          <a href="#history" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">History</a>
+          <a href="#docs" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Docs</a>
+        </div>
+        <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" aria-label="Toggle dark mode">
+          <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <section id="screen" aria-labelledby="screen-heading" class="mb-12">
+      <h1 id="screen-heading" class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">Screen Address</h1>
+      <p class="text-gray-600 dark:text-gray-400 mb-8 max-w-2xl">Enter an Ethereum address to check AML/fraud risk. Results include ML risk score and on-chain attestation reference.</p>
+      
+      <form id="screen-form" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 sm:p-8" novalidate>
+        <div class="mb-6">
+          <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ethereum Address</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400" aria-hidden="true">0x</span>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              placeholder="Enter 0x address..."
+              class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              required
+              minlength="42"
+              maxlength="42"
+              pattern="^0x[a-fA-F0-9]{40}$"
+              aria-describedby="address-help"
+            >
+          </div>
+          <p id="address-help" class="mt-1 text-sm text-gray-500 dark:text-gray-400">Enter a valid Ethereum address (42 characters starting with 0x)</p>
+          <p id="address-error" class="mt-1 text-sm text-red-600 dark:text-red-400 hidden" aria-live="polite"></p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+          <div>
+            <label for="txHash" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction Hash (Optional)</label>
+            <input
+              type="text"
+              id="txHash"
+              name="txHash"
+              placeholder="0x..."
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              maxlength="66"
+              pattern="^0x[a-fA-F0-9]{64}$"
+            >
+          </div>
+          <div>
+            <label for="chainId" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Network</label>
+            <select
+              id="chainId"
+              name="chainId"
+              class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            >
+              <option value="8453">Base Mainnet</option>
+              <option value="84531" selected>Base Sepolia (Testnet)</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          id="screen-submit"
+          class="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <span id="submit-text">Screen Address</span>
+          <svg id="submit-spinner" class="w-5 h-5 animate-spin hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </button>
+      </form>
+    </section>
+
+    <section id="results" aria-labelledby="results-heading" class="mb-12 hidden" role="status" aria-live="polite">
+      <h2 id="results-heading" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Screening Results</h2>
+      <div id="results-content" class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6"></div>
+    </section>
+
+    <section id="history" aria-labelledby="history-heading" class="mb-12">
+      <h2 id="history-heading" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Attestation History</h2>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table id="history-table" class="w-full" role="table">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Address</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Risk Score</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Risk Level</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Attestation ID</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody id="history-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+              <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">No attestations yet. Screen an address to see history.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="docs" aria-labelledby="docs-heading" class="mb-12">
+      <h2 id="docs-heading" class="text-2xl font-bold text-gray-900 dark:text-white mb-4">API Documentation</h2>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Screen an Address</h3>
+        <pre class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto text-sm text-gray-700 dark:text-gray-300"><code>POST /api/v1/screen
+Content-Type: application/json
+
+{
+  "address": "0x...",
+  "txHash": "0x...",
+  "chainId": 8453
+}</code></pre>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 mt-6">Get Attestation History</h3>
+        <pre class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto text-sm text-gray-700 dark:text-gray-300"><code>GET /api/v1/attestations/:address</code></pre>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 mt-6">Health Check</h3>
+        <pre class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto text-sm text-gray-700 dark:text-gray-300"><code>GET /health</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      <p>ChainSentinel — AML/Fraud Detection on Base L2</p>
+      <p class="mt-1">Built with Solidity, Express, and Python ML</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
