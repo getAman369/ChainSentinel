@@ -4,10 +4,11 @@ import { spawn } from "child_process";
 import path from "path";
 import { createAttestation, getLatestAttestation, getAttestationCount } from "../../services/attestationService";
 import { screenAddress } from "../../services/screeningService";
+import { validateRequestBody, screenValidationRules } from "../../middleware/validation";
 
 export const screenRouter = Router();
 
-screenRouter.post("/screen", async (req, res) => {
+screenRouter.post("/screen", validateRequestBody(screenValidationRules), async (req, res) => {
   try {
     const { address, txHash, chainId } = req.body;
     
