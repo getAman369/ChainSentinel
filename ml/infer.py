@@ -3,20 +3,28 @@ import sys
 import json
 import pickle
 import numpy as np
+from feature_engineering import compute_features
 
 def load_model():
     with open("ml/models/risk_model.pkl", "rb") as f:
         return pickle.load(f)
 
 def extract_features(data):
+    enhanced = compute_features(data)
     return np.array([[
-        data.get("tx_count", 0),
-        data.get("counterparties", 0),
-        data.get("avg_value", 0),
-        data.get("max_value", 0),
-        data.get("contracts", 0),
-        data.get("days_active", 0),
-        data.get("mixing_score", 0)
+        enhanced.get("tx_count", 0),
+        enhanced.get("counterparties", 0),
+        enhanced.get("avg_value", 0),
+        enhanced.get("max_value", 0),
+        enhanced.get("contracts", 0),
+        enhanced.get("days_active", 0),
+        enhanced.get("mixing_score", 0),
+        enhanced.get("tx_frequency", 0),
+        enhanced.get("counterparty_diversity", 0),
+        enhanced.get("value_concentration", 0),
+        enhanced.get("contract_ratio", 0),
+        enhanced.get("risk_velocity", 0),
+        enhanced.get("activity_growth_rate", 0)
     ]])
 
 def get_risk_label(score):
