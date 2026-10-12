@@ -2,9 +2,13 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import path from "path";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { screenRouter } from "./api/routes/screen";
 import { attestRouter } from "./api/routes/attest";
+import { healthRouter } from "./api/routes/health";
+import { requestIdMiddleware, loggingMiddleware } from "./middleware/logging";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 dotenv.config();
 
@@ -17,12 +21,76 @@ const rateLimiter = new RateLimiterMemory({
   duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS || "60000") / 1000,
 });
 
-app.use(helmet());
+const MAX_REQUEST_SIZE = process.env.MAX_REQUEST_SIZE || "1mb";
+const MAX_RESPONSE_SIZE = process.env.MAX_RESPONSE_SIZE || "1mb";
+
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    frameguard: { action: "deny" },
+    xssFilter: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  })
+);
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: MAX_REQUEST_SIZE }));
+app.use(express.urlencoded({ limit: MAX_REQUEST_SIZE, extended: true }));
+
+app.use((req, _res, next) => {
+  if (req.headers["content-length"]) {
+    const size = parseInt(req.headers["content-length"], 10);
+    if (size > parseInt(MAX_RESPONSE_SIZE)) {
+      return next(new Error("Request payload too large"));
+    }
+  }
+  next();
+});
+
+app.use(requestIdMiddleware);
+app.use(loggingMiddleware);
+
+const responseSizeLimiter = (req: any, res: any, next: any) => {
+  const originalWrite = res.write;
+  const originalEnd = res.end;
+  let bytesWritten = 0;
+  const maxSize = parseInt(MAX_RESPONSE_SIZE);
+
+  res.write = function (chunk: any) {
+    bytesWritten += chunk ? Buffer.byteLength(chunk) : 0;
+    if (bytesWritten > maxSize) {
+      res.status(413);
+    }
+    return originalWrite.apply(res, arguments as any);
+  };
+
+  res.end = function (chunk: any) {
+    bytesWritten += chunk ? Buffer.byteLength(chunk) : 0;
+    if (bytesWritten > maxSize) {
+      return originalEnd.call(res, JSON.stringify({ error: "Response too large" }), "utf-8");
+    }
+    return originalEnd.apply(res, arguments as any);
+  };
+
+  next();
+};
+app.use(responseSizeLimiter);
+
+const API_VERSION = "v1";
 
 // Apply rate limiting to API routes
-app.use("/api/v1", async (req, res, next) => {
+app.use(`/api/${API_VERSION}`, async (req, res, next) => {
   try {
     await rateLimiter.consume(req.ip || "unknown");
     next();
@@ -31,14 +99,35 @@ app.use("/api/v1", async (req, res, next) => {
   }
 });
 
-app.use("/api/v1", screenRouter);
-app.use("/api/v1", attestRouter);
+app.use(`/api/${API_VERSION}`, screenRouter);
+app.use(`/api/${API_VERSION}`, attestRouter);
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", service: "ChainSentinel", timestamp: new Date().toISOString() });
+app.get(`/api/${API_VERSION}`, (req, res) => {
+  res.json({
+    service: "ChainSentinel",
+    version: API_VERSION,
+    endpoints: {
+      screen: `POST /api/${API_VERSION}/screen`,
+      attestations: `GET /api/${API_VERSION}/attestations/:address`,
+      health: "GET /health",
+      docs: "GET /api/v1/docs",
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
+
+app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
+  const specPath = path.join(__dirname, "..", "..", "docs", "openapi.json");
+  res.sendFile(specPath);
+});
+
+app.use("/health", healthRouter);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`ChainSentinel API running on http://localhost:${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`API endpoint: http://localhost:${PORT}/api/${API_VERSION}`);
 });

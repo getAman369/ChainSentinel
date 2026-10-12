@@ -1,0 +1,220 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "ChainSentinel API",
+    "description": "AML/Fraud Detection API with on-chain attestation on Base L2",
+    "version": "1.0.0",
+    "contact": {
+      "name": "ChainSentinel",
+      "url": "https://github.com/opendao/OpenDAOhub"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    },
+    {
+      "url": "https://api.chainsentinel.io",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "API root",
+        "description": "Returns API information and available endpoints",
+        "tags": ["Info"],
+        "responses": {
+          "200": {
+            "description": "API information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "service": { "type": "string", "example": "ChainSentinel" },
+                    "version": { "type": "string", "example": "v1" },
+                    "endpoints": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Returns health status of the API and its dependencies",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "enum": ["ok", "degraded"] },
+                    "service": { "type": "string" },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "uptime": { "type": "number" },
+                    "dependencies": { "type": "object" }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "API is degraded"
+          }
+        }
+      }
+    },
+    "/api/v1/screen": {
+      "post": {
+        "summary": "Screen an Ethereum address",
+        "description": "Screens an address for AML/fraud risk using ML and records an on-chain attestation",
+        "tags": ["Screening"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "description": "Ethereum address to screen (0x + 40 hex chars)",
+                    "pattern": "^0x[a-fA-F0-9]{40}$",
+                    "example": "0x1234567890123456789012345678901234567890"
+                  },
+                  "txHash": {
+                    "type": "string",
+                    "description": "Optional transaction hash for context",
+                    "pattern": "^0x[a-fA-F0-9]{64}$"
+                  },
+                  "chainId": {
+                    "type": "integer",
+                    "description": "Chain ID (8453 for Base mainnet, 84531 for Sepolia)",
+                    "example": 8453,
+                    "default": 8453
+                  },
+                  "confidence_threshold": {
+                    "type": "number",
+                    "description": "Minimum confidence threshold (0-1)",
+                    "example": 0.7
+                  }
+                },
+                "required": ["address"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Screening complete",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": { "type": "string", "example": "0x1234..." },
+                    "riskScore": { "type": "integer", "minimum": 1, "maximum": 5, "example": 3 },
+                    "riskLabel": { "type": "string", "example": "Medium" },
+                    "confidence": { "type": "number", "example": 0.8734 },
+                    "evidenceHash": { "type": "string", "example": "0xabcd..." },
+                    "attestationTx": { "type": "string", "example": "0xefgh..." },
+                    "attestationId": { "type": "integer", "example": 1 },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string" },
+                    "details": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/attestations/{address}": {
+      "get": {
+        "summary": "Get attestation history for an address",
+        "description": "Retrieves the latest attestation and total count for a given address",
+        "tags": ["Attestations"],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[a-fA-F0-9]{40}$"
+            },
+            "description": "Ethereum address to look up"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attestation data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": { "type": "string" },
+                    "attestationId": { "type": "integer" },
+                    "riskScore": { "type": "integer", "minimum": 1, "maximum": 5 },
+                    "riskLabel": { "type": "string" },
+                    "evidenceHash": { "type": "string" },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "valid": { "type": "boolean" },
+                    "totalAttestations": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No attestations found"
+          },
+          "400": {
+            "description": "Invalid address"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    }
+  },
+  "security": [
+    { "ApiKeyAuth": [] }
+  ]
+}
