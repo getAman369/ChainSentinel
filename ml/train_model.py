@@ -7,10 +7,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from feature_engineering import compute_features
 from evaluate import compute_metrics, save_metrics, print_metrics
+from model_versioning import register_version, MODEL_VERSION
+from feature_engineering import ALL_FEATURES
 
 np.random.seed(42)
-
-MODEL_VERSION = "1.1.0"
 
 def generate_training_data(n_samples=2000):
     X = []
@@ -96,7 +96,7 @@ def main():
     y_pred = model.predict(X_test)
     print(classification_report(y_test, y_pred, zero_division=0))
 
-    metrics = compute_metrics(y_test, y_pred)
+    metrics = compute_metrics(y_test, y_pred, risk_labels={1: "Minimal", 2: "Low", 3: "Medium", 4: "High", 5: "Critical"})
     save_metrics(metrics, MODEL_VERSION)
     print_metrics(metrics)
 
@@ -104,6 +104,20 @@ def main():
     with open("ml/models/risk_model.pkl", "wb") as f:
         pickle.dump(model, f)
     print(f"Model v{MODEL_VERSION} saved to ml/models/risk_model.pkl")
+
+    register_version(
+        version=MODEL_VERSION,
+        model_file="risk_model.pkl",
+        training_params={
+            "n_estimators": 100,
+            "max_depth": 10,
+            "random_state": 42,
+            "class_weight": "balanced",
+        },
+        feature_set=ALL_FEATURES,
+        metrics=metrics,
+        notes="RandomForest classifier with engineered features",
+    )
 
 if __name__ == "__main__":
     main()
