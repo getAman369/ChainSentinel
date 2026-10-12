@@ -23,6 +23,7 @@ ml/models/feature_importance.json
 
 # ML test data
 ml/test_data/
+ml/models/feedback_data.json
 
 # IDE
 .DS_Store
