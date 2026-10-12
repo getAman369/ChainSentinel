@@ -20,6 +20,9 @@ ml/models/*.pkl
 ml/models/metrics.json
 ml/models/versions.json
 
+# ML test data
+ml/test_data/
+
 # IDE
 .DS_Store
 .idea/
