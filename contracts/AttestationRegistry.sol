@@ -8,7 +8,12 @@ pragma solidity ^0.8.17;
  */
 contract AttestationRegistry {
     // Version info for upgrade tracking
-    string public constant VERSION = "1.1.0";
+    string public constant VERSION = "1.2.0";
+
+    // Access control roles
+    bytes32 public constant DEFAULT_ADMIN_ROLE = 0;
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant VIEWER_ROLE = keccak256("VIEWER_ROLE");
 
     // Risk levels
     uint8 public constant MINIMAL = 1;
@@ -35,6 +40,10 @@ contract AttestationRegistry {
     mapping(address => uint256[]) public attestationsBySubject;
     mapping(bytes32 => bool) public evidenceHashUsed; // prevent duplicate evidence
 
+    // Access control
+    mapping(bytes32 => mapping(address => bool)) private _roles;
+    mapping(address => uint256) private _revision;
+
     // Pausable
     bool public paused;
 
@@ -57,9 +66,16 @@ contract AttestationRegistry {
     );
     event AttestationRevoked(uint256 indexed id, address indexed revoker);
     event VersionUpgraded(string oldVersion, string newVersion, address indexed upgrader);
+    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
+    event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this.");
+        _;
+    }
+
+    modifier onlyRole(bytes32 role) {
+        require(_roles[role][msg.sender], "Caller does not have the required role");
         _;
     }
 
@@ -70,6 +86,33 @@ contract AttestationRegistry {
 
     constructor() {
         owner = msg.sender;
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function _setupRole(bytes32 role, address account) internal {
+        _roles[role][account] = true;
+        _revision[account] += 1;
+        emit RoleGranted(role, account, msg.sender);
+    }
+
+    function grantRole(bytes32 role, address account) external onlyOwner {
+        _setupRole(role, account);
+    }
+
+    function revokeRole(bytes32 role, address account) external onlyOwner {
+        _roles[role][account] = false;
+        _revision[account] += 1;
+        emit RoleRevoked(role, account, msg.sender);
+    }
+
+    function hasRole(bytes32 role, address account) external view returns (bool) {
+        return _roles[role][account];
+    }
+
+    function getRoleAdmin(bytes32 role) public pure returns (bytes32) {
+        if (role == OPERATOR_ROLE) return DEFAULT_ADMIN_ROLE;
+        if (role == VIEWER_ROLE) return DEFAULT_ADMIN_ROLE;
+        return role;
     }
 
     /**
