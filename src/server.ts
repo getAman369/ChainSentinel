@@ -6,6 +6,7 @@ import { RateLimiterMemory } from "rate-limiter-flexible";
 import { screenRouter } from "./api/routes/screen";
 import { attestRouter } from "./api/routes/attest";
 import { requestIdMiddleware, loggingMiddleware } from "./middleware/logging";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 dotenv.config();
 
@@ -41,6 +42,9 @@ app.use("/api/v1", attestRouter);
 app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "ChainSentinel", timestamp: new Date().toISOString() });
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`ChainSentinel API running on http://localhost:${PORT}`);
