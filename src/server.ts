@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import path from "path";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { screenRouter } from "./api/routes/screen";
 import { attestRouter } from "./api/routes/attest";
@@ -109,9 +110,15 @@ app.get(`/api/${API_VERSION}`, (req, res) => {
       screen: `POST /api/${API_VERSION}/screen`,
       attestations: `GET /api/${API_VERSION}/attestations/:address`,
       health: "GET /health",
+      docs: "GET /api/v1/docs",
     },
     timestamp: new Date().toISOString(),
   });
+});
+
+app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
+  const specPath = path.join(__dirname, "..", "..", "docs", "openapi.json");
+  res.sendFile(specPath);
 });
 
 app.use("/health", healthRouter);
