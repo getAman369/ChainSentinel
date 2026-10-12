@@ -31,7 +31,11 @@ contract AttestationRegistry {
         uint256 timestamp;
         address attestor; // who created the attestation (the API operator)
         bool valid;
+        uint256 expiresAt; // 0 = never expires
     }
+
+    // Default expiration: 90 days in seconds
+    uint256 public constant DEFAULT_EXPIRATION = 90 days;
 
     // State
     address public owner;
@@ -65,6 +69,7 @@ contract AttestationRegistry {
         uint256 endId
     );
     event AttestationRevoked(uint256 indexed id, address indexed revoker);
+    event AttestationExpired(uint256 indexed id, uint256 expiresAt);
     event VersionUpgraded(string oldVersion, string newVersion, address indexed upgrader);
     event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
     event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
@@ -158,6 +163,7 @@ contract AttestationRegistry {
         att.timestamp = block.timestamp;
         att.attestor = msg.sender;
         att.valid = true;
+        att.expiresAt = 0;
 
         attestationsBySubject[subject].push(attestationCount);
 
@@ -170,6 +176,79 @@ contract AttestationRegistry {
         );
     }
 
+    /**
+     * @notice Create a new risk attestation with expiration.
+     * @param subject The address being screened.
+     * @param riskScore Risk level 1-5.
+     * @param evidenceHash Hash of the off-chain ML evidence payload.
+     * @param expiresIn Seconds until the attestation expires (0 = never).
+     */
+    function createAttestationWithExpiry(
+        address subject,
+        uint8 riskScore,
+        bytes32 evidenceHash,
+        uint256 expiresIn
+    ) external whenNotPaused {
+        require(riskScore >= 1 && riskScore <= 5, "Invalid risk score");
+        require(!evidenceHashUsed[evidenceHash], "Evidence hash already used");
+
+        evidenceHashUsed[evidenceHash] = true;
+        attestationCount++;
+
+        Attestation storage att = attestations[attestationCount];
+        att.id = attestationCount;
+        att.subject = subject;
+        att.riskScore = riskScore;
+        att.evidenceHash = evidenceHash;
+        att.timestamp = block.timestamp;
+        att.attestor = msg.sender;
+        att.valid = true;
+        att.expiresAt = expiresIn > 0 ? block.timestamp + expiresIn : 0;
+
+        attestationsBySubject[subject].push(attestationCount);
+
+        emit AttestationCreated(
+            attestationCount,
+            subject,
+            riskScore,
+            evidenceHash,
+            block.timestamp
+        );
+
+        // Emit expiration event only if expiry is set
+        if (expiresIn > 0) {
+            emit AttestationExpired(attestationCount, att.expiresAt);
+        }
+    }
+
+    /**
+     * @notice Check if an attestation is expired.
+     * @param id Attestation ID to check.
+     * @return True if expired and still valid.
+     */
+    function isExpired(uint256 id) external view returns (bool) {
+        Attestation storage att = attestations[id];
+        require(att.id == id, "Invalid attestation id");
+        return att.expiresAt > 0 && att.expiresAt < block.timestamp && att.valid;
+    }
+
+    /**
+     * @notice Expire an attestation by its ID (owner or attestor only).
+     * @param id Attestation ID to expire.
+     */
+    function expireAttestation(uint256 id) external {
+        Attestation storage att = attestations[id];
+        require(att.id == id, "Invalid attestation id");
+        require(att.valid, "Already revoked or expired");
+
+        if (att.expiresAt > 0 && att.expiresAt < block.timestamp) {
+            att.valid = false;
+            emit AttestationExpired(id, att.expiresAt);
+        } else {
+            att.valid = false;
+            emit AttestationExpired(id, att.expiresAt);
+        }
+    }
     /**
      * @notice Create multiple attestations in a single transaction (batch).
      * @param subjects Array of addresses being screened.
@@ -206,6 +285,7 @@ contract AttestationRegistry {
             att.timestamp = block.timestamp;
             att.attestor = msg.sender;
             att.valid = true;
+            att.expiresAt = 0;
 
             attestationsBySubject[subjects[i]].push(attestationCount);
             ids[i] = attestationCount;
