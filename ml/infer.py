@@ -40,7 +40,10 @@ def get_risk_label(score):
 
 def main():
     try:
-        input_data = json.loads(sys.argv[1])
+        if len(sys.argv) > 1:
+            input_data = json.loads(sys.argv[1])
+        else:
+            input_data = json.loads(sys.stdin.read())
         model = load_model()
         features = extract_features(input_data)
         prediction = model.predict(features)[0]
