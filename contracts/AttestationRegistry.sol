@@ -7,6 +7,9 @@ pragma solidity ^0.8.17;
  * Each screen result is recorded as an attestation with a risk score and evidence hash.
  */
 contract AttestationRegistry {
+    // Version info for upgrade tracking
+    string public constant VERSION = "1.1.0";
+
     // Risk levels
     uint8 public constant MINIMAL = 1;
     uint8 public constant LOW = 2;
@@ -53,6 +56,7 @@ contract AttestationRegistry {
         uint256 endId
     );
     event AttestationRevoked(uint256 indexed id, address indexed revoker);
+    event VersionUpgraded(string oldVersion, string newVersion, address indexed upgrader);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this.");
@@ -66,6 +70,14 @@ contract AttestationRegistry {
 
     constructor() {
         owner = msg.sender;
+    }
+
+    /**
+     * @notice Returns the current contract version.
+     * @dev Useful for upgrade tracking and ensuring client compatibility.
+     */
+    function getVersion() external pure returns (string memory) {
+        return VERSION;
     }
 
     function pause() external onlyOwner {
