@@ -8,6 +8,65 @@ const riskLabels = {
   5: { label: 'Critical', class: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }
 };
 
+function showToast(message, type = 'info', duration = 5000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `pointer-events-auto cursor-pointer rounded-lg px-4 py-3 mb-2 shadow-lg max-w-sm w-full text-sm font-medium transition-all duration-300 toast-enter`;
+
+  const typeClasses = {
+    info: 'bg-blue-600 text-white',
+    success: 'bg-green-600 text-white',
+    warning: 'bg-yellow-600 text-gray-900',
+    error: 'bg-red-600 text-white',
+  };
+  toast.className += ' ' + (typeClasses[type] || typeClasses.info);
+
+  toast.innerHTML = `
+    <div class="flex items-center">
+      <span class="flex-1">${message}</span>
+      <button type="button" class="ml-3 text-current hover:opacity-70 focus:outline-none" onclick="this.parentElement.parentElement.remove()">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+  `;
+
+  container.appendChild(toast);
+
+  if (duration > 0) {
+    setTimeout(() => {
+      toast.classList.remove('toast-enter');
+      toast.classList.add('toast-exit');
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.parentElement.removeChild(toast);
+        }
+      }, 300);
+    }, duration);
+  }
+
+  return toast;
+}
+
+function showSuccess(message) {
+  return showToast(message, 'success');
+}
+
+function showError(message) {
+  return showToast(message, 'error');
+}
+
+function showWarning(message) {
+  return showToast(message, 'warning');
+}
+
+function showInfo(message) {
+  return showToast(message, 'info');
+}
+
 function formatAddress(addr) {
   if (!addr) return '';
   return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -340,6 +399,7 @@ function initForm() {
       const result = await screenAddress(address, txHash, chainId);
       displayResults(result);
       loadHistory(address);
+      showSuccess('Address screened successfully');
     } catch (error) {
       console.error('Screening failed:', error);
       showError('address-error', error.message || 'Failed to screen address. Please try again.');
