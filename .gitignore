@@ -18,6 +18,7 @@ coverage/
 # ML models
 ml/models/*.pkl
 ml/models/metrics.json
+ml/models/versions.json
 
 # IDE
 .DS_Store
