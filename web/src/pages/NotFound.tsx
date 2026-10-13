@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { HomeIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
+import { useAnimations } from "@/hooks/useAnimations";
+
 import { Input } from "@components/ui/Input";
 
 const POLYGONS = [
@@ -17,6 +19,7 @@ const POLYGONS = [
 export default function NotFound() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const animations = useAnimations();
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
@@ -104,8 +107,7 @@ export default function NotFound() {
           <motion.button
             type="button"
             onClick={() => navigate("/")}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            {...animations.button}
             className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-700"
           >
             <HomeIcon className="h-5 w-5" aria-hidden="true" />
