@@ -1,12 +1,23 @@
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+
+import Home from "./pages/Home";
+import History from "./pages/History";
+import ApiDocs from "./pages/ApiDocs";
+import Settings from "./pages/Settings";
+import About from "./pages/About";
+import NotFound from "./pages/NotFound";
+
 export default function App() {
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold">ChainSentinel</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          AML/Fraud Detection on Base L2
-        </p>
-      </div>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/docs" element={<ApiDocs />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/about" element={<About />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
