@@ -35,9 +35,20 @@ export function FormField({
         )}
       </label>
       {children}
-      {helpText && !error && <p className="text-sm text-gray-500 dark:text-gray-400">{helpText}</p>}
+      {helpText && !error && (
+        <p
+          id={htmlFor ? `${htmlFor}-help` : undefined}
+          className="text-sm text-gray-500 dark:text-gray-400"
+        >
+          {helpText}
+        </p>
+      )}
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p
+          id={htmlFor ? `${htmlFor}-error` : undefined}
+          className="text-sm text-red-600 dark:text-red-400"
+          role="alert"
+        >
           {error}
         </p>
       )}
