@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+web/node_modules/
+
+# Build output
+dist/
+web/dist/
+artifacts/
+cache/
+coverage/
+
+# Version control
+.git/
+.github/
+.kilo/
+
+# Environment
+.env
+.env.*
+
+# Caches and logs
+.pytest_cache/
+*.log
+
+# ML models and test data
+ml/models/*.pkl
+ml/models/metrics.json
+ml/models/versions.json
+ml/models/feature_importance.json
+ml/test_data/
+ml/models/feedback_data.json

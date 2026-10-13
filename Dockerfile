@@ -12,6 +12,16 @@ COPY public/ ./public/
 RUN npx tsc --noEmit || true
 RUN npx tsc
 
+FROM node:20-alpine AS web-builder
+
+WORKDIR /app/web
+
+COPY web/package*.json ./
+RUN npm ci && npm cache clean --force
+
+COPY web/ ./
+RUN npm run build
+
 FROM python:3.11-alpine AS ml-base
 
 WORKDIR /app/ml
@@ -30,6 +40,7 @@ ENV PYTHONPATH=/app/ml
 ENV CONFIDENCE_THRESHOLD=0.5
 
 COPY --from=builder /app/dist/ ./dist/
+COPY --from=web-builder /app/web/dist/ ./web/dist/
 COPY --from=ml-base /usr/local/ /usr/local/
 RUN ln -sf /usr/local/bin/python3.11 /usr/local/bin/python3
 

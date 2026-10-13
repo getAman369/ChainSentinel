@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import fs from "fs";
 import path from "path";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { screenRouter } from "./api/routes/screen";
@@ -134,10 +135,20 @@ app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
 
 app.use("/health", healthRouter);
 
-app.use(express.static(path.join(__dirname, "..", "public")));
+const webDist = path.join(__dirname, "..", "web", "dist");
+const publicDir = path.join(__dirname, "..", "public");
+const staticDir = fs.existsSync(webDist) ? webDist : publicDir;
 
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(__dirname, "..", "public", "index.html"));
+app.use(express.static(staticDir));
+
+// SPA fallback: serve index.html for client-side routes
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/") || req.path === "/health") {
+    return next();
+  }
+  res.sendFile(path.join(staticDir, "index.html"), (err) => {
+    if (err) next();
+  });
 });
 
 app.use(notFoundHandler);

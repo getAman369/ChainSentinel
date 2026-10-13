@@ -9,7 +9,12 @@
     "start": "node dist/server.js",
     "compile": "hardhat compile",
     "test": "hardhat test",
-    "deploy": "hardhat run scripts/deploy.ts --network baseSepolia"
+    "deploy": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "web:test": "npm --prefix web run test",
+    "web:lint": "npm --prefix web run lint",
+    "web:typecheck": "npm --prefix web run typecheck"
   },
   "keywords": ["blockchain", "aml", "fraud-detection", "ethereum", "base", "ai", "ml"],
   "author": "",
