@@ -1,4 +1,4 @@
-import type { ApiError } from "../types";
+import type { ApiError } from "@/types";
 
 const API_BASE = "/api/v1";
 

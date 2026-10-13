@@ -4,13 +4,13 @@ import type {
   HealthCheck,
   ScreenRequest,
   ScreenResponse,
-} from "../types";
+} from "@/types";
 import {
   apiVersionInfoSchema,
   attestationSchema,
   healthCheckSchema,
   screenResponseSchema,
-} from "../types";
+} from "@/types";
 
 import { get, post } from "./client";
 
