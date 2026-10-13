@@ -1,27 +1,26 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
-import type { ScreenRequest, ScreenResponse } from "@/types";
+import { useAddressHistory } from "@/hooks/useAddressHistory";
+import { useScreenAddress } from "@/hooks/useScreenAddress";
+import type { ScreenRequest } from "@/types";
 
 import { ErrorBoundary } from "@components/common/ErrorBoundary";
 import { ScreenForm } from "@components/forms/ScreenForm";
+import { useToast } from "@components/feedback/Toast";
 
 import { fadeInUp, staggerContainer } from "@lib/animations";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { screen } = useScreenAddress();
+  const { addAddress } = useAddressHistory();
+  const { success } = useToast();
 
   const handleSubmit = async (request: ScreenRequest) => {
-    const result: ScreenResponse = {
-      address: request.address,
-      riskScore: 3,
-      riskLabel: "Medium",
-      confidence: 0.85,
-      evidenceHash: `0x${"ab".repeat(32)}`,
-      attestationTx: `0x${"cd".repeat(32)}`,
-      attestationId: 1,
-      timestamp: new Date().toISOString(),
-    };
+    const result = await screen(request);
+    addAddress(request.address);
+    success("Address screened successfully");
     navigate("/results", { state: { result } });
   };
 
@@ -42,7 +41,11 @@ export default function Home() {
         <motion.div
           className="absolute bottom-0 right-1/4 h-80 w-80 rounded-full bg-blue-200/30 blur-3xl dark:bg-blue-900/30"
           animate={{ y: [0, -25, 0], x: [0, -15, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
         />
       </div>
 
