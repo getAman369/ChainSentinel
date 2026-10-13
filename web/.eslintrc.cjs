@@ -22,6 +22,16 @@ module.exports = {
       "warn",
       {
         groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
+        pathGroups: [
+          { pattern: "@/**", group: "internal", position: "before" },
+          { pattern: "@components/**", group: "internal", position: "before" },
+          { pattern: "@hooks/**", group: "internal", position: "before" },
+          { pattern: "@services/**", group: "internal", position: "before" },
+          { pattern: "@lib/**", group: "internal", position: "before" },
+          { pattern: "@pages/**", group: "internal", position: "before" },
+          { pattern: "@types/**", group: "internal", position: "before" },
+        ],
+        pathGroupsExcludedImportTypes: ["react"],
         "newlines-between": "always",
       },
     ],
