@@ -1,6 +1,8 @@
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { ThemeProvider } from "@/hooks/useTheme";
+
 import { ToastProvider } from "@components/feedback/Toast";
 import { Layout } from "@components/layout/Layout";
 
@@ -45,9 +47,11 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ToastProvider>
-        <AnimatedRoutes />
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AnimatedRoutes />
+        </ToastProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
