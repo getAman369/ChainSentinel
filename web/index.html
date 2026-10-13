@@ -32,6 +32,20 @@
     />
     <meta name="twitter:image" content="https://chainsentinel.io/og-image.png" />
     <link rel="manifest" href="/manifest.json" />
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem("chainsentinel-theme");
+          if (
+            theme === "dark" ||
+            (!theme &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches)
+          ) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
     <title>ChainSentinel - AML Transaction Screening</title>
   </head>
   <body>
