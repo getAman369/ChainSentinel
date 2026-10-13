@@ -7,6 +7,7 @@ import { Layout } from "@components/layout/Layout";
 import Home from "@pages/Home";
 import History from "@pages/History";
 import Results from "@pages/Results";
+import Health from "@pages/Health";
 import ApiDocs from "@pages/ApiDocs";
 import Settings from "@pages/Settings";
 import About from "@pages/About";
@@ -30,6 +31,7 @@ function AnimatedRoutes() {
             <Route path="/results" element={<Results />} />
             <Route path="/history" element={<History />} />
             <Route path="/docs" element={<ApiDocs />} />
+            <Route path="/status" element={<Health />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
