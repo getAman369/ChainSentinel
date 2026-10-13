@@ -7,7 +7,7 @@
 - **Domain:** Finance (AML transaction monitoring + fraud detection)
 - **Form:** Web API SaaS with on-chain attestation
 - **Blockchain:** Base L2, Solidity 0.8.17
-- **Stack:** Python ML + Node.js/Express API
+- **Stack:** React 18 + Vite frontend, Node.js/Express API, Python ML
 - **Budget:** Free only until first client
 - **Timeline:** 8 weeks
 
@@ -24,15 +24,15 @@
 ## Architecture
 
 ```
-Client (Exchange/DeFi)
+Browser (React 18 + Vite, web/)
     │
-    ▼ POST /api/v1/screen
+    ▼ /api/v1/* (Vite proxy in dev, same-origin in prod)
 ChainSentinel API (Express)
     │
-    ├─► screeningService (Alchemy/RPC)
+    ├─► screeningService (Base RPC)
     │       └─► address features (tx_count, counterparties, etc.)
     │
-    ├─► ML classifier (Python/pickle)
+    ├─► ML classifier (Python/pickle, ml/infer.py)
     │       └─► riskScore (1-5) + confidence
     │
     └─► attestationService (ethers.js)
@@ -40,12 +40,31 @@ ChainSentinel API (Express)
                     └─► immutable attestation record
 ```
 
+## Project Structure
+
+```
+├── contracts/          # Solidity AttestationRegistry
+├── ml/                 # Python ML training + inference
+├── public/             # Legacy vanilla JS frontend (fallback)
+├── scripts/            # Hardhat deployment scripts
+├── src/                # Express API server
+│   └── api/routes/     # screen, attest, health
+├── test/               # Hardhat contract tests
+└── web/                # React 18 + Vite + TypeScript frontend
+    └── src/
+        ├── components/ # UI, forms, display, feedback, layout
+        ├── hooks/      # useApi, useTheme, useScreenAddress
+        ├── pages/      # Home, History, Results, Docs, Settings, About
+        ├── services/   # Typed API client (zod-validated)
+        └── types/      # API response types + zod schemas
+```
+
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+
 - Python 3.10+
-- An Alchemy account (free tier)
+- A Base RPC endpoint (Alchemy/QuickNode free tier)
 
 ### Setup
 
@@ -53,6 +72,7 @@ ChainSentinel API (Express)
 ```bash
 npm install
 pip install -r ml/requirements.txt
+cd web && npm install && cd ..
 ```
 
 2. **Configure environment:**
@@ -76,6 +96,33 @@ npm run deploy
 5. **Start the API:**
 ```bash
 npm run dev
+```
+
+## Development
+
+### Frontend (React + Vite)
+The React app lives in `web/`. During development it runs on
+`localhost:5173` and proxies `/api/*` and `/health` to the Express
+server on `localhost:3000`.
+
+```bash
+cd web
+npm run dev        # Vite dev server with HMR
+npm run build      # typecheck + production build to web/dist
+npm test           # Vitest + React Testing Library
+npm run lint       # ESLint + Prettier
+```
+
+### Production
+Build the frontend (`npm run web:build`), then start the API. The
+Express server serves `web/dist/` automatically when it exists, with
+an SPA fallback for client-side routes. The legacy `public/` app is
+served as a fallback when no React build is present.
+
+### Local blockchain testing
+```bash
+npx hardhat node                                  # localhost:8545
+npx hardhat run scripts/deploy.ts --network localhost
 ```
 
 ## API Endpoints
@@ -109,6 +156,14 @@ Response:
 GET /api/v1/attestations/:address
 ```
 
+### Health check
+```bash
+GET /health
+```
+
+Returns overall status plus per-dependency checks (blockchain
+provider, ML model, smart contract, wallet).
+
 ## Smart Contract
 
 The `AttestationRegistry.sol` contract stores:
@@ -117,6 +172,26 @@ The `AttestationRegistry.sol` contract stores:
 - `timestamp`
 - `attestor` (API operator)
 - `valid` flag (revocable by owner)
+
+## Testing
+
+```bash
+npm test              # Hardhat contract tests
+npm run web:test      # Vitest frontend tests (31 tests)
+python ml/train_model.py   # ML training + evaluation
+```
+
+## Deployment
+
+The multi-stage `Dockerfile` builds the React app
+(`web-builder` stage), compiles the API (`builder` stage), and
+installs Python ML dependencies (`ml-base` stage). The runtime
+image serves the API and the built frontend on port 3000.
+
+```bash
+docker build -t chainsentinel:latest .
+docker run -p 3000:3000 --env-file .env chainsentinel:latest
+```
 
 ## Security
 
