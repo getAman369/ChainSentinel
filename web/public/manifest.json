@@ -1,0 +1,16 @@
+{
+  "name": "ChainSentinel",
+  "short_name": "ChainSentinel",
+  "description": "AML/Fraud Detection API with on-chain attestation on Base L2",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "100x100",
+      "type": "image/svg+xml"
+    }
+  ]
+}
