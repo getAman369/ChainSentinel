@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import {
   CheckCircleIcon,
   ExclamationCircleIcon,
   MinusCircleIcon,
 } from "@heroicons/react/24/outline";
 
+import { useApi } from "@/hooks/useApi";
 import { getHealth } from "@/services/api";
 import type { HealthCheck } from "@/types";
 
@@ -47,25 +48,8 @@ function StatusIndicator({ status }: { status: string }) {
 }
 
 export default function Health() {
-  const [health, setHealth] = useState<HealthCheck | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchHealth = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setHealth(await getHealth());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Health check failed");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchHealth();
-  }, [fetchHealth]);
+  const fetcher = useCallback(() => getHealth(), []);
+  const { data: health, loading, error, refetch } = useApi<HealthCheck>(fetcher);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -76,7 +60,7 @@ export default function Health() {
             Real-time status of ChainSentinel dependencies.
           </p>
         </div>
-        <Button variant="secondary" onClick={fetchHealth} loading={loading}>
+        <Button variant="secondary" onClick={refetch} loading={loading}>
           Refresh
         </Button>
       </div>
@@ -89,7 +73,7 @@ export default function Health() {
             className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900 dark:bg-red-900/20 dark:text-red-400"
             role="alert"
           >
-            {error}
+            {error.message}
           </p>
         ) : health ? (
           <div className="space-y-6">
