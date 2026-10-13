@@ -24,6 +24,18 @@ const rateLimiter = new RateLimiterMemory({
 const MAX_REQUEST_SIZE = process.env.MAX_REQUEST_SIZE || "1mb";
 const MAX_RESPONSE_SIZE = process.env.MAX_RESPONSE_SIZE || "1mb";
 
+const parseSize = (size: string): number => {
+  const num = parseInt(size, 10);
+  if (isNaN(num)) return 1024 * 1024;
+  const unit = size.replace(/[0-9]/g, "").toLowerCase().trim();
+  if (unit === "mb") return num * 1024 * 1024;
+  if (unit === "kb") return num * 1024;
+  if (unit === "gb") return num * 1024 * 1024 * 1024;
+  return num;
+};
+
+const maxResponseBytes = parseSize(MAX_RESPONSE_SIZE);
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -48,10 +60,10 @@ app.use(cors());
 app.use(express.json({ limit: MAX_REQUEST_SIZE }));
 app.use(express.urlencoded({ limit: MAX_REQUEST_SIZE, extended: true }));
 
-app.use((req, _res, next) => {
+app.use((req, res, next) => {
   if (req.headers["content-length"]) {
     const size = parseInt(req.headers["content-length"], 10);
-    if (size > parseInt(MAX_RESPONSE_SIZE)) {
+    if (size > parseSize(MAX_REQUEST_SIZE)) {
       return next(new Error("Request payload too large"));
     }
   }
@@ -65,11 +77,10 @@ const responseSizeLimiter = (req: any, res: any, next: any) => {
   const originalWrite = res.write;
   const originalEnd = res.end;
   let bytesWritten = 0;
-  const maxSize = parseInt(MAX_RESPONSE_SIZE);
 
   res.write = function (chunk: any) {
     bytesWritten += chunk ? Buffer.byteLength(chunk) : 0;
-    if (bytesWritten > maxSize) {
+    if (bytesWritten > maxResponseBytes) {
       res.status(413);
     }
     return originalWrite.apply(res, arguments as any);
@@ -77,7 +88,7 @@ const responseSizeLimiter = (req: any, res: any, next: any) => {
 
   res.end = function (chunk: any) {
     bytesWritten += chunk ? Buffer.byteLength(chunk) : 0;
-    if (bytesWritten > maxSize) {
+    if (bytesWritten > maxResponseBytes) {
       return originalEnd.call(res, JSON.stringify({ error: "Response too large" }), "utf-8");
     }
     return originalEnd.apply(res, arguments as any);
@@ -122,6 +133,12 @@ app.get(`/api/${API_VERSION}/docs`, (_req, res) => {
 });
 
 app.use("/health", healthRouter);
+
+app.use(express.static(path.join(__dirname, "..", "public")));
+
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "index.html"));
+});
 
 app.use(notFoundHandler);
 app.use(errorHandler);

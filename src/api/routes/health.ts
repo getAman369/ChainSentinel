@@ -5,7 +5,7 @@ import path from "path";
 
 export const healthRouter = Router();
 
-healthRouter.get("/health", async (req: Request, res: Response) => {
+healthRouter.get("/", async (req: Request, res: Response) => {
   const checks: Record<string, { status: string; message?: string }> = {};
 
   // Check blockchain provider
